@@ -18,17 +18,17 @@ std::vector<std::wstring> g_vecSoundFileNames;
 HINSTANCE g_hInstance;
 bool g_bIsFileLoaded = false;
 //std::vector<std::thread> myThreads;
-HBITMAP bitMaps;
+std::vector<HBITMAP> bitMaps;
 
 int xc = 0;
 int yc = 0;
 HBITMAP hBitMap;
 std::mutex gLock;
 
-void loadPicture()
+void loadPicture(int imageNo)
 {
 	gLock.lock();
-	bitMaps = (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[0].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE);
+	bitMaps.push_back( (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[imageNo].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE));
 	gLock.unlock();
 }
 
@@ -53,7 +53,7 @@ void controller(HWND wnd, int imageNo)
 
 	wnd = CreateWindow(L"Static", NULL, WS_VISIBLE | WS_CHILD | SS_BITMAP, xc, yc, 0, 0, wnd, NULL, NULL, NULL);
 	gLock.unlock();
-	SendMessageW(wnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)bitMaps);
+	SendMessageW(wnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)bitMaps[imageNo]);
 
 }
 
@@ -213,7 +213,7 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 		_hWindowDC = BeginPaint(_hwnd, &ps);
 		//Do all our painting here
 		
-		controller(_hwnd, 0);
+		//controller(_hwnd, 0);
 
 		EndPaint(_hwnd, &ps);
 		return (0);
@@ -230,8 +230,13 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 			if (ChooseImageFilesToLoad(_hwnd))
 			{
 				//Write code here to create multiple threads to load image files in parallel
-				loadPicture();
-				//controller(_hwnd, 0);
+
+				for (int i = 0; i < 3; i++)
+				
+				{
+					loadPicture(i);
+					controller(_hwnd, i);
+				}
 			}
 			else
 			{
