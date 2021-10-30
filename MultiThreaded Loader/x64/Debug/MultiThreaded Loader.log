@@ -1,0 +1,3 @@
+﻿  main.cpp
+C:\Users\Simon\Documents\Study\Term 4\CAO107\A2\MultiThreaded Loader\main.cpp(140,10): warning C4101: '_wsFileToOpen': unreferenced local variable
+  MultiThreaded Loader.vcxproj -> C:\Users\Simon\Documents\Study\Term 4\CAO107\A2\x64\Debug\MultiThreaded Loader.exe
