@@ -17,8 +17,9 @@ std::vector<std::wstring> g_vecImageFileNames;
 std::vector<std::wstring> g_vecSoundFileNames;
 HINSTANCE g_hInstance;
 bool g_bIsFileLoaded = false;
-//std::vector<std::thread> myThreads;
-std::vector<HBITMAP> bitMaps;
+std::vector<std::thread> threads;
+std::vector<HBITMAP> images;
+
 
 int xc = 0;
 int yc = 0;
@@ -28,7 +29,7 @@ std::mutex gLock;
 void loadPicture(int imageNo)
 {
 	gLock.lock();
-	bitMaps.push_back( (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[imageNo].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE));
+	images[imageNo] = (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[imageNo].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE);
 	gLock.unlock();
 }
 
@@ -53,7 +54,7 @@ void controller(HWND wnd, int imageNo)
 
 	wnd = CreateWindow(L"Static", NULL, WS_VISIBLE | WS_CHILD | SS_BITMAP, xc, yc, 0, 0, wnd, NULL, NULL, NULL);
 	gLock.unlock();
-	SendMessageW(wnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)bitMaps[imageNo]);
+	SendMessageW(wnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)images[imageNo]);
 
 }
 
@@ -230,13 +231,30 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 			if (ChooseImageFilesToLoad(_hwnd))
 			{
 				//Write code here to create multiple threads to load image files in parallel
+				int amountOfThreads = g_vecImageFileNames.size();
 
-				for (int i = 0; i < 3; i++)
-				
+				images.resize(g_vecImageFileNames.size());
+				for (int i = 0; i < g_vecImageFileNames.size(); i++)				
 				{
-					loadPicture(i);
+					//loadPicture(i);
+					//std::thread th1(loadPicture,i);
+					threads.push_back(std::thread(loadPicture,i));
 					controller(_hwnd, i);
+					//th1.join();
+					/*for (int j = 0; j < amountOfThreads; j++)
+					{
+						myThreads[j].join();
+					}*/
+
 				}
+				//joining all started threads
+				for (int j = 0; j < amountOfThreads; j++)
+				{
+					threads[j].join();
+				}
+
+				
+				
 			}
 			else
 			{
