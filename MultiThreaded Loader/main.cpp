@@ -213,7 +213,15 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 
 		_hWindowDC = BeginPaint(_hwnd, &ps);
 		//Do all our painting here
-		
+		for (int i = 0; i < g_vecImageFileNames.size(); i++)
+		{
+			//loadPicture(i);
+
+			//threads.push_back(std::thread(loadPicture, i));
+			controller(_hwnd, i);
+
+
+		}
 		//controller(_hwnd, 0);
 
 		EndPaint(_hwnd, &ps);
@@ -239,7 +247,7 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 					//loadPicture(i);
 				
 					threads.push_back(std::thread(loadPicture,i));
-					controller(_hwnd, i);
+					//controller(_hwnd, i);
 					
 
 				}
@@ -248,7 +256,7 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 				{
 					threads[j].join();
 				}
-
+				
 				threads.clear();
 
 				
@@ -258,7 +266,7 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 			{
 				MessageBox(_hwnd, L"No Image File selected", L"Error Message", MB_ICONWARNING);
 			}
-			//RedrawWindow(_hwnd, NULL, NULL, RDW_ERASENOW | RDW_INVALIDATE | RDW_UPDATENOW);
+			RedrawWindow(_hwnd, NULL, NULL, RDW_ERASENOW | RDW_INVALIDATE | RDW_UPDATENOW);
 			return (0);
 		}
 		break;
