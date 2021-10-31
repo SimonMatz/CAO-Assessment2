@@ -237,14 +237,10 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 				for (int i = 0; i < g_vecImageFileNames.size(); i++)				
 				{
 					//loadPicture(i);
-					//std::thread th1(loadPicture,i);
+				
 					threads.push_back(std::thread(loadPicture,i));
 					controller(_hwnd, i);
-					//th1.join();
-					/*for (int j = 0; j < amountOfThreads; j++)
-					{
-						myThreads[j].join();
-					}*/
+					
 
 				}
 				//joining all started threads
@@ -253,6 +249,8 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 					threads[j].join();
 				}
 
+				threads.clear();
+
 				
 				
 			}
@@ -260,7 +258,7 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 			{
 				MessageBox(_hwnd, L"No Image File selected", L"Error Message", MB_ICONWARNING);
 			}
-
+			//RedrawWindow(_hwnd, NULL, NULL, RDW_ERASENOW | RDW_INVALIDATE | RDW_UPDATENOW);
 			return (0);
 		}
 		break;
