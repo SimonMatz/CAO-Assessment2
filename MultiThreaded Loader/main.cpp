@@ -5,6 +5,10 @@
 #include "resource.h"
 #include <mutex>
 #include <thread>
+#include <fstream>
+
+
+
 
 #define WINDOW_CLASS_NAME L"MultiThreaded Loader Tool"
 const unsigned int _kuiWINDOWWIDTH = 1200;
@@ -213,16 +217,15 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 
 		_hWindowDC = BeginPaint(_hwnd, &ps);
 		//Do all our painting here
+		
+
 		for (int i = 0; i < g_vecImageFileNames.size(); i++)
 		{
-			//loadPicture(i);
-
-			//threads.push_back(std::thread(loadPicture, i));
+			
 			controller(_hwnd, i);
-
-
+			//TextOut(_hWindowDC, 300, 300, L"i", 20);
 		}
-		//controller(_hwnd, 0);
+		
 
 		EndPaint(_hwnd, &ps);
 		return (0);
@@ -242,15 +245,31 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 				int amountOfThreads = g_vecImageFileNames.size();
 
 				images.resize(g_vecImageFileNames.size());
+
+				std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
 				for (int i = 0; i < g_vecImageFileNames.size(); i++)				
 				{
 					//loadPicture(i);
-				
-					threads.push_back(std::thread(loadPicture,i));
+			
+					threads.push_back(std::thread(loadPicture, i));
+
 					//controller(_hwnd, i);
 					
 
 				}
+				
+				std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+				int time1 = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+				
+				
+				std::ofstream  writeFile;
+				writeFile.open("output.txt");
+				writeFile << time1 << "ms" << std::endl;
+				
+				writeFile.close();
+
 				//joining all started threads
 				for (int j = 0; j < amountOfThreads; j++)
 				{
