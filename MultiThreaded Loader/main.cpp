@@ -30,10 +30,24 @@ int yc = 0;
 HBITMAP hBitMap;
 std::mutex gLock;
 
+int maxThreads = std::thread::hardware_concurrency();
+
 void loadPicture(int imageNo)
 {
 	gLock.lock();
 	images[imageNo] = (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[imageNo].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE);
+	gLock.unlock();
+}
+
+void loadPicture2(int imageNo, int imagesPerThread)
+{
+	gLock.lock();
+	for (int i = 0; i < imagesPerThread; i++)
+	{
+		images[imageNo] = (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[imageNo].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE);
+		imageNo++;
+	}
+
 	gLock.unlock();
 }
 
@@ -243,31 +257,39 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 			{
 				//Write code here to create multiple threads to load image files in parallel
 				int amountOfThreads = g_vecImageFileNames.size();
+				int imagePerThread = g_vecImageFileNames.size() / maxThreads;
+				
 
 				images.resize(g_vecImageFileNames.size());
 
 				std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-				for (int i = 0; i < g_vecImageFileNames.size(); i++)				
+				if (g_vecImageFileNames.size() > maxThreads)
 				{
-					//loadPicture(i);
-			
-					threads.push_back(std::thread(loadPicture, i));
-
-					//controller(_hwnd, i);
-					
-
+					for (int i = 0; i < maxThreads; i++)
+					{
+						//loadPicture(i);
+						threads.push_back(std::thread(loadPicture2, i, imagePerThread));
+						//controller(_hwnd, i);
+					}
 				}
-				
-				std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
+				else
+				{
+					for (int i = 0; i < g_vecImageFileNames.size(); i++)
+					{
+						//loadPicture(i);
+						threads.push_back(std::thread(loadPicture, i));
+						//controller(_hwnd, i);
+					}
+				}
+
+				std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 				int time1 = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-				
 				
 				std::ofstream  writeFile;
 				writeFile.open("output.txt");
-				writeFile << time1 << "ms" << std::endl;
-				
+				writeFile << time1 << "ms" << std::endl;				
 				writeFile.close();
 
 				//joining all started threads
@@ -277,9 +299,6 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 				}
 				
 				threads.clear();
-
-				
-				
 			}
 			else
 			{
