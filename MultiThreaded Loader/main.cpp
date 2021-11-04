@@ -49,9 +49,10 @@ void loadPicture2(int imageNo, int imagesPerThread)
 	gLock.lock();
 	for (int i = 0; i < imagesPerThread; i++)
 	{
-		images[imageNo+i] = (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[imageNo+i].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE);
+		images[imageNo] = (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[imageNo].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE);
 		
 	}
+	
 
 	gLock.unlock();
 }
@@ -69,8 +70,6 @@ void controller(HWND wnd, int imageNo)
 	{
 		xc = imageNo * 100;
 
-		
-		
 	}
 
 	if (xc >= _kuiWINDOWWIDTH)
@@ -241,17 +240,16 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 		_hWindowDC = BeginPaint(_hwnd, &ps);
 		//Do all our painting here
 		
-
 		for (int i = 0; i < g_vecImageFileNames.size(); i++)
 		{
 			
 			controller(_hwnd, i);
 
 			//Outputting the load time  - https://stackoverflow.com/questions/25829243/win32-programming-textout-wm-paint
-			
 			TextOut(_hWindowDC, 50, 300, L"Loading time: ", 17);
 			TextOut(_hWindowDC, 150, 300, stringStream.str().c_str(), 8);
 			TextOut(_hWindowDC, 180, 300, L"microseconds ", 13);
+			
 		}
 		
 
@@ -271,7 +269,7 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 			{
 				//Write code here to create multiple threads to load image files in parallel
 				int amountOfThreads = g_vecImageFileNames.size();
-				int imagePerThread = g_vecImageFileNames.size() / maxThreads;
+				int imagePerThread = 2;//g_vecImageFileNames.size() / maxThreads;
 				
 
 				images.resize(g_vecImageFileNames.size());
@@ -280,19 +278,27 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 
 				if (g_vecImageFileNames.size() > maxThreads)
 				{
-					for (int i = 0; i < maxThreads; i++)
+					for (int i = 0; i < g_vecImageFileNames.size()/imagePerThread; i++)
 					{
 
 						if (i == maxThreads-1)
 						{
-							threads.push_back(std::thread(loadPicture2, i, 0));
+							threads.push_back(std::thread(loadPicture2, i, 1));
 						}
 						else {
 							//loadPicture(i);
 							threads.push_back(std::thread(loadPicture2, i, imagePerThread));
 							//controller(_hwnd, i);
 						}
+						
 					}
+					//joining all started threads
+					for (int j = 0; j < 9; j++)
+					{
+						threads[j].join();
+					}
+
+					threads.clear();
 				}
 
 				else
@@ -303,6 +309,13 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 						threads.push_back(std::thread(loadPicture, i));
 						//controller(_hwnd, i);
 					}
+					//joining all started threads
+					for (int j = 0; j < amountOfThreads; j++)
+					{
+						threads[j].join();
+					}
+
+					threads.clear();
 				}
 
 				std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
@@ -317,19 +330,22 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 				writeFile << time << "ms" << std::endl;				
 				writeFile.close();
 
-				//joining all started threads
-				for (int j = 0; j < amountOfThreads; j++)
-				{
-					threads[j].join();
-				}
+				////joining all started threads
+				//for (int j = 0; j < 9; j++)
+				//{
+				//	threads[j].join();
+				//}
+				//
+				//threads.clear();
 				
-				threads.clear();
+				
 			}
 			else
 			{
 				MessageBox(_hwnd, L"No Image File selected", L"Error Message", MB_ICONWARNING);
 			}
 			RedrawWindow(_hwnd, NULL, NULL, RDW_ERASENOW | RDW_INVALIDATE | RDW_UPDATENOW);
+
 			return (0);
 		}
 		break;
@@ -365,6 +381,7 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 	default:
 		break;
 	}
+
 	return (DefWindowProc(_hwnd, _uiMsg, _wparam, _lparam));
 }
 
