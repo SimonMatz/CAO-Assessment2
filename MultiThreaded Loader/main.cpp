@@ -6,6 +6,7 @@
 #include <mutex>
 #include <thread>
 #include <fstream>
+#include <sstream>
 
 
 
@@ -32,6 +33,10 @@ std::mutex gLock;
 
 int maxThreads = std::thread::hardware_concurrency();
 
+std::wstringstream stringStream;
+
+
+
 void loadPicture(int imageNo)
 {
 	gLock.lock();
@@ -44,8 +49,8 @@ void loadPicture2(int imageNo, int imagesPerThread)
 	gLock.lock();
 	for (int i = 0; i < imagesPerThread; i++)
 	{
-		images[imageNo] = (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[imageNo].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE);
-		imageNo++;
+		images[imageNo+i] = (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[imageNo+i].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE);
+		
 	}
 
 	gLock.unlock();
@@ -56,12 +61,16 @@ void controller(HWND wnd, int imageNo)
 	gLock.lock();
 	if (yc > 0)
 	{
-		xc = ((imageNo - 8) * 100);
+		xc = ((imageNo - 12) * 100);
+		
 	}
 
 	else
 	{
 		xc = imageNo * 100;
+
+		
+		
 	}
 
 	if (xc >= _kuiWINDOWWIDTH)
@@ -237,7 +246,12 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 		{
 			
 			controller(_hwnd, i);
-			//TextOut(_hWindowDC, 300, 300, L"i", 20);
+
+			//Outputting the load time  - https://stackoverflow.com/questions/25829243/win32-programming-textout-wm-paint
+			
+			TextOut(_hWindowDC, 50, 300, L"Loading time: ", 17);
+			TextOut(_hWindowDC, 150, 300, stringStream.str().c_str(), 8);
+			TextOut(_hWindowDC, 180, 300, L"microseconds ", 13);
 		}
 		
 
@@ -268,9 +282,16 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 				{
 					for (int i = 0; i < maxThreads; i++)
 					{
-						//loadPicture(i);
-						threads.push_back(std::thread(loadPicture2, i, imagePerThread));
-						//controller(_hwnd, i);
+
+						if (i == maxThreads-1)
+						{
+							threads.push_back(std::thread(loadPicture2, i, 0));
+						}
+						else {
+							//loadPicture(i);
+							threads.push_back(std::thread(loadPicture2, i, imagePerThread));
+							//controller(_hwnd, i);
+						}
 					}
 				}
 
@@ -285,11 +306,15 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 				}
 
 				std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-				int time1 = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+				float time = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+				
+				
+				//converting time into LPCWSTR https://stackoverflow.com/questions/2481787/convert-float-to-lpcwstr-lpwstr
+				stringStream << time;
 				
 				std::ofstream  writeFile;
 				writeFile.open("output.txt");
-				writeFile << time1 << "ms" << std::endl;				
+				writeFile << time << "ms" << std::endl;				
 				writeFile.close();
 
 				//joining all started threads
