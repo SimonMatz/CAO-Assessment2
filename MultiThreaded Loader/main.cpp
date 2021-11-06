@@ -11,6 +11,7 @@
 
 
 
+
 #define WINDOW_CLASS_NAME L"MultiThreaded Loader Tool"
 const unsigned int _kuiWINDOWWIDTH = 1200;
 const unsigned int _kuiWINDOWHEIGHT = 1200;
@@ -26,6 +27,8 @@ std::vector<std::thread> threads;
 std::vector<HBITMAP> images;
 
 
+
+
 int xc = 0;
 int yc = 0;
 HBITMAP hBitMap;
@@ -34,6 +37,8 @@ std::mutex gLock;
 int maxThreads = std::thread::hardware_concurrency();
 
 std::wstringstream stringStream;
+
+
 
 
 
@@ -83,6 +88,8 @@ void controller(HWND wnd, int imageNo)
 	SendMessageW(wnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)images[imageNo]);
 
 }
+
+
 
 
 
@@ -247,8 +254,8 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 
 			//Outputting the load time  - https://stackoverflow.com/questions/25829243/win32-programming-textout-wm-paint
 			TextOut(_hWindowDC, 50, 300, L"Loading time: ", 17);
-			TextOut(_hWindowDC, 150, 300, stringStream.str().c_str(), 8);
-			TextOut(_hWindowDC, 180, 300, L"microseconds ", 13);
+			TextOut(_hWindowDC, 150, 300, stringStream.str().c_str(), 5);
+			TextOut(_hWindowDC, 180, 300, L"miliseconds ", 13);
 			
 		}
 		
@@ -269,8 +276,12 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 			{
 				//Write code here to create multiple threads to load image files in parallel
 				int amountOfThreads = g_vecImageFileNames.size();
-				int imagePerThread = 2;//g_vecImageFileNames.size() / maxThreads;
+				int amountofThreads2 = g_vecImageFileNames.size() / 2;
+				int imagesLeft = g_vecImageFileNames.size() % 2;
 				
+				int chunkSize = (g_vecImageFileNames.size() + maxThreads - 1) / maxThreads;
+
+				//int imagePerThread3 = std::ceil(imagePerThread1);
 
 				images.resize(g_vecImageFileNames.size());
 
@@ -278,26 +289,25 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 
 				if (g_vecImageFileNames.size() > maxThreads)
 				{
-					for (int i = 0; i < g_vecImageFileNames.size()/imagePerThread; i++)
+					for (int i = 0; i < amountofThreads2; i++)
+					{
+				
+						threads.push_back(std::thread(loadPicture2, i, chunkSize));							
+											
+					}
+
+					for (int i = 0; i < imagesLeft; i++)
 					{
 
-						if (i == maxThreads-1)
-						{
-							threads.push_back(std::thread(loadPicture2, i, 1));
-						}
-						else {
-							//loadPicture(i);
-							threads.push_back(std::thread(loadPicture2, i, imagePerThread));
-							//controller(_hwnd, i);
-						}
-						
+						threads.push_back(std::thread(loadPicture2, i, 1));
+
 					}
 					//joining all started threads
-					for (int j = 0; j < 9; j++)
+					for (int j = 0; j < amountofThreads2 + imagesLeft; j++)
 					{
 						threads[j].join();
 					}
-
+					//clearing vector for next run
 					threads.clear();
 				}
 
@@ -314,12 +324,12 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 					{
 						threads[j].join();
 					}
-
+					//clearing vector for next run
 					threads.clear();
 				}
 
 				std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-				float time = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+				float time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
 				
 				
 				//converting time into LPCWSTR https://stackoverflow.com/questions/2481787/convert-float-to-lpcwstr-lpwstr
@@ -353,7 +363,12 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 		{
 			if (ChooseSoundFilesToLoad(_hwnd))
 			{
+
+			
 				//Write code here to create multiple threads to load sound files in parallel
+				
+
+
 			}
 			else
 			{
