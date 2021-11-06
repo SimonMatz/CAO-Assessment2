@@ -65,17 +65,30 @@ void loadPicture2(int imageNo, int imagesPerThread)
 void controller(HWND wnd, int imageNo)
 {
 	gLock.lock();
-	if (yc > 0)
+	/*if (yc == 100)
 	{
 		xc = ((imageNo - 12) * 100);
 		
 	}
-
 	else
 	{
 		xc = imageNo * 100;
 
 	}
+
+	if (yc == 200)
+	{
+		xc = ((imageNo - 24) * 100);
+
+	}*/
+
+
+	if (imageNo >= 1)
+		xc += 100;
+
+	else
+		xc = 0;
+
 
 	if (xc >= _kuiWINDOWWIDTH)
 	{
@@ -279,7 +292,7 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 				int amountofThreads2 = g_vecImageFileNames.size() / 2;
 				int imagesLeft = g_vecImageFileNames.size() % 2;
 				
-				int chunkSize = (g_vecImageFileNames.size() + maxThreads - 1) / maxThreads;
+				//int chunkSize = (g_vecImageFileNames.size() + maxThreads - 1) / maxThreads;
 
 				int j = 0;
 
@@ -292,15 +305,11 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 					for (int i = 0; i < amountofThreads2; i++)
 					{
 
-						
-						
-
 						if(i == 0)
-						threads.push_back(std::thread(loadPicture2, 0, chunkSize));							
-						
-						 
+						threads.push_back(std::thread(loadPicture2, 0, 2));							
+												 
 						else
-						threads.push_back(std::thread(loadPicture2, i+j, chunkSize));
+						threads.push_back(std::thread(loadPicture2, i+j, 2));
 
 						j++;
 					}
@@ -308,7 +317,7 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 					for (int i = 0; i < imagesLeft; i++)
 					{
 
-						threads.push_back(std::thread(loadPicture2, i, 1));
+						threads.push_back(std::thread(loadPicture2, amountofThreads2 + j, 1));
 
 					}
 					//joining all started threads
