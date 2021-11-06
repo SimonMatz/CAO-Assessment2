@@ -54,7 +54,7 @@ void loadPicture2(int imageNo, int imagesPerThread)
 	gLock.lock();
 	for (int i = 0; i < imagesPerThread; i++)
 	{
-		images[imageNo] = (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[imageNo].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE);
+		images[imageNo+i] = (HBITMAP)LoadImageW(NULL, (LPCWSTR)g_vecImageFileNames[imageNo+i].c_str(), IMAGE_BITMAP, 100, 100, LR_LOADFROMFILE);
 		
 	}
 	
@@ -281,7 +281,7 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 				
 				int chunkSize = (g_vecImageFileNames.size() + maxThreads - 1) / maxThreads;
 
-				//int imagePerThread3 = std::ceil(imagePerThread1);
+				int j = 0;
 
 				images.resize(g_vecImageFileNames.size());
 
@@ -291,9 +291,18 @@ LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _uiMsg, WPARAM _wparam, LPARAM _lpa
 				{
 					for (int i = 0; i < amountofThreads2; i++)
 					{
-				
-						threads.push_back(std::thread(loadPicture2, i, chunkSize));							
-											
+
+						
+						
+
+						if(i == 0)
+						threads.push_back(std::thread(loadPicture2, 0, chunkSize));							
+						
+						 
+						else
+						threads.push_back(std::thread(loadPicture2, i+j, chunkSize));
+
+						j++;
 					}
 
 					for (int i = 0; i < imagesLeft; i++)
